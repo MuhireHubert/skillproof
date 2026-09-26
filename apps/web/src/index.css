@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body { @apply bg-paper text-ink font-body antialiased; }
+  h1, h2, h3, h4 { @apply font-display tracking-tight leading-tight; }
+  h1 { @apply text-4xl font-extrabold; }
+  h2 { @apply text-2xl font-extrabold; }
+  h3 { @apply text-lg font-semibold; }
+  a { @apply text-rev; }
+  :focus-visible { @apply outline outline-[3px] outline-offset-2 outline-rev; }
+}
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded border border-ink bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-[#0C1730] disabled:cursor-default disabled:opacity-50; }
+  .btn-ghost { @apply border-ink bg-transparent text-ink hover:bg-[#E8EDF4]; }
+  .btn-go { @apply border-ok bg-ok hover:bg-[#0A6449]; }
+  .btn-danger { @apply border-no bg-transparent text-no hover:bg-no-bg; }
+  .btn-sm { @apply px-3 py-1 text-xs; }
+  .input { @apply w-full rounded border border-[#B9C3D3] bg-white px-3 py-2 text-sm text-ink; }
+  .label { @apply mb-1 block text-sm font-semibold; }
+  .chip { @apply inline-block rounded-full border border-line bg-[#F7F9FC] px-2.5 py-0.5 text-xs; }
+  .chip-strong { @apply border-ink bg-ink text-white; }
+  .chip-mid { @apply border-[#C9D3E1] bg-[#E8EDF4]; }
+  .card { @apply rounded border border-l-[5px] border-line bg-white p-4; }
+  .pill { @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold; }
+  .linkbtn { @apply cursor-pointer border-0 bg-transparent p-0 text-rev underline; }
+}

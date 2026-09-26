@@ -1,0 +1,13 @@
+{
+  "name": "skillproof",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sector-neutral platform closing the degree-to-work gap",
+  "scripts": {
+    "install:all": "npm install --prefix apps/api && npm install --prefix apps/web",
+    "dev:api": "npm run dev --prefix apps/api",
+    "dev:web": "npm run dev --prefix apps/web",
+    "test": "npm test --prefix apps/api",
+    "build:web": "npm run build --prefix apps/web"
+  }
+}
