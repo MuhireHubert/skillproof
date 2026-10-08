@@ -36,6 +36,29 @@ jobs:
       - name: Install web dependencies
         run: npm ci --prefix apps/web
 
+      - name: Validate Supabase build settings
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          missing=0
+          if [ -z "$VITE_SUPABASE_URL" ]; then
+            echo "::error::VITE_SUPABASE_URL is empty or unavailable to this workflow."
+            missing=1
+          else
+            echo "VITE_SUPABASE_URL is present."
+          fi
+          if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::VITE_SUPABASE_ANON_KEY is empty or unavailable to this workflow."
+            missing=1
+          else
+            echo "VITE_SUPABASE_ANON_KEY is present."
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo "Add the secrets under Settings → Secrets and variables → Actions → Repository secrets (or to the github-pages environment), then rerun this workflow."
+            exit 1
+          fi
+
       - name: Build web app
         run: npm run build --prefix apps/web
         env:
