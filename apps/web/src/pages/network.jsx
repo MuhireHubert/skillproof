@@ -1,4 +1,4 @@
-import { PageHeader, Panel, Pill, Stat, Table, LevelRow, Meter } from '../ui.jsx';
+import { PageHeader, Panel, Pill, Stat, Meter } from '../ui.jsx';
 import { useCatalog } from '../catalog.jsx';
 
 const sectors = [
