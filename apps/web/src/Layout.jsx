@@ -8,9 +8,9 @@ import { Notice, Seal } from './ui.jsx';
 
 export const NAV = {
   student: [['/', 'Dashboard'], ['/projects', 'Projects'], ['/internships', 'Internships'], ['/evidence', 'Evidence'], ['/assessments', 'Assessments'], ['/journey', 'Journey'], ['/profile', 'Profile']],
-  employer: [['/', 'Dashboard'], ['/standards', 'Standards'], ['/projects', 'Projects'], ['/internships', 'Internships'], ['/review', 'Review'], ['/talent', 'Talent'], ['/assessments', 'Assessments'], ['/feedback', 'Feedback']],
-  institution: [['/', 'Dashboard'], ['/standards', 'Standards'], ['/demand', 'Demand'], ['/gap', 'Skill gap'], ['/programmes', 'Programmes'], ['/enrollments', 'Enrolments'], ['/assessments', 'Assessments'], ['/outcomes', 'Outcomes'], ['/actions', 'Actions']],
-  regulator: [['/', 'Dashboard'], ['/requirements', 'Requirements'], ['/compliance', 'Compliance']],
+  employer: [['/', 'Dashboard'], ['/network', 'Network'], ['/standards', 'Standards'], ['/projects', 'Projects'], ['/internships', 'Internships'], ['/review', 'Review'], ['/talent', 'Talent'], ['/assessments', 'Assessments'], ['/feedback', 'Feedback']],
+  institution: [['/', 'Dashboard'], ['/network', 'Network'], ['/standards', 'Standards'], ['/demand', 'Demand'], ['/gap', 'Skill gap'], ['/programmes', 'Programmes'], ['/enrollments', 'Enrolments'], ['/assessments', 'Assessments'], ['/outcomes', 'Outcomes'], ['/actions', 'Actions']],
+  regulator: [['/', 'Dashboard'], ['/network', 'Network'], ['/requirements', 'Requirements'], ['/compliance', 'Compliance']],
 };
 
 function Bell() {
