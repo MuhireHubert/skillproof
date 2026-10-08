@@ -1,91 +1,75 @@
-import { PageHeader, Panel, Pill, Stat, Meter } from '../ui.jsx';
-import { useCatalog } from '../catalog.jsx';
+import { useMemo, useState } from 'react';
+import { PageHeader, Panel, Pill, Stat, Meter, Loading, Empty } from '../ui.jsx';
+import { supabase } from '../lib/supabase.js';
+import { useAsync, unwrap } from '../lib/hooks.js';
+import { fmtDate } from '../lib/format.js';
 
-const sectors = [
-  { name: 'Technology', demand: 86, coverage: 72, employers: 34, gaps: 6 },
-  { name: 'Agriculture', demand: 74, coverage: 61, employers: 21, gaps: 8 },
-  { name: 'Finance', demand: 69, coverage: 77, employers: 28, gaps: 4 },
-  { name: 'Hospitality', demand: 63, coverage: 58, employers: 17, gaps: 7 },
-];
-
-const standards = [
-  { role: 'Software Engineer', sector: 'Technology', version: '3', mapped: '84%', review: '14 Nov 2026', status: 'Current' },
-  { role: 'Digital Marketing Officer', sector: 'Marketing', version: '2', mapped: '76%', review: '02 Dec 2026', status: 'Current' },
-  { role: 'Agribusiness Officer', sector: 'Agriculture', version: '1', mapped: '61%', review: '18 Jan 2027', status: 'Review due' },
-];
-
-const actions = [
-  ['Cloud and deployment', 'Software Engineering', 'Industry standard', 'In progress'],
-  ['Data analysis', 'Economics', 'Employer feedback', 'Proposed'],
-  ['Food safety and HACCP', 'Food & Beverage', 'Industry standard', 'In progress'],
-];
+const views = ['Overview', 'Standards', 'Alignment', 'Outcomes'];
 
 export default function Network() {
-  const { sectors: catalogSectors } = useCatalog();
-  return (
-    <>
-      <PageHeader
-        title="Industry network"
-        sub="A shared view of standards, competencies, curriculum alignment and employment outcomes across participating institutions."
-        action={<Pill tone="plain">{catalogSectors.length} sectors configured</Pill>}
-      />
+  const [view, setView] = useState('Overview');
+  const summary = useAsync(async () => unwrap(await supabase.rpc('network_sector_summary')), []);
+  const standards = useAsync(async () => unwrap(await supabase.rpc('network_standard_summary')), []);
+  const data = summary.data || [];
+  const standardData = standards.data || [];
+  const totals = useMemo(() => data.reduce((a, s) => ({
+    employers: a.employers + Number(s.employers || 0),
+    institutions: Math.max(a.institutions, Number(s.institutions || 0)),
+    standards: a.standards + Number(s.standards || 0),
+    graduates: a.graduates + Number(s.graduates || 0),
+    employed: a.employed + Number(s.employed || 0),
+  }), { employers: 0, institutions: 0, standards: 0, graduates: 0, employed: 0 }), [data]);
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Industry standards" value="48" />
-        <Stat label="Universities connected" value="12" />
-        <Stat label="Employers participating" value="186" />
-        <Stat label="Graduate outcomes" value="8,420" />
-      </div>
+  if (summary.loading) return <Loading />;
+  if (summary.error) return <Empty>Network data could not be loaded. Check that the Version 4 database migration has been applied.</Empty>;
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.45fr_1fr]">
-        <Panel title="Sector alignment">
-          <p className="mb-4 text-sm text-ink-soft">Demand shows reported employer need; coverage shows how well participating programmes currently address that demand.</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-line text-left text-ink-soft"><th className="pb-2 font-medium">Sector</th><th className="pb-2 font-medium">Demand</th><th className="pb-2 font-medium">Curriculum coverage</th><th className="pb-2 font-medium">Employers</th><th className="pb-2 font-medium">Open gaps</th></tr></thead>
-              <tbody>
-                {sectors.map((s) => (
-                  <tr key={s.name} className="border-b border-[#EDF1F6]">
-                    <td className="py-3 font-semibold">{s.name}</td>
-                    <td className="py-3"><div className="flex items-center gap-2"><Meter level={Math.ceil(s.demand / 25)} /><span>{s.demand}%</span></div></td>
-                    <td className="py-3">{s.coverage}%</td><td className="py-3">{s.employers}</td>
-                    <td className="py-3"><Pill tone={s.gaps > 6 ? 'wait' : 'plain'}>{s.gaps}</Pill></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Panel>
+  return <>
+    <PageHeader title="Industry network" sub="One shared view of industry demand, university alignment, student evidence and employment outcomes." />
+    <div className="mb-5 flex flex-wrap gap-1 border-b border-line">
+      {views.map(v => <button key={v} className={`border-b-2 px-3 py-2 text-sm font-semibold ${view === v ? 'border-ok text-ink' : 'border-transparent text-ink-soft'}`} onClick={() => setView(v)}>{v}</button>)}
+    </div>
 
-        <Panel title="How the network works">
-          <ol className="space-y-3 text-sm">
-            {[
-              ['01', 'Industry sets the expectation', 'Employers and sector bodies maintain role standards and competency requirements.'],
-              ['02', 'Universities map their programmes', 'Courses and assessments are connected to the same competency framework.'],
-              ['03', 'Students build evidence', 'Projects, assessments and placements create a record of demonstrated capability.'],
-              ['04', 'Outcomes close the loop', 'Hiring and employer feedback inform the next curriculum review.'],
-            ].map(([n, title, body]) => (
-              <li key={n} className="grid grid-cols-[34px_1fr] gap-3">
-                <span className="font-display text-sm font-bold text-ink-soft">{n}</span>
-                <div><strong>{title}</strong><p className="mt-0.5 text-ink-soft">{body}</p></div>
-              </li>
-            ))}
-          </ol>
-        </Panel>
-      </div>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <Stat label="Industry standards" value={totals.standards} />
+      <Stat label="Employers represented" value={totals.employers} />
+      <Stat label="Graduates tracked" value={totals.graduates} />
+      <Stat label="Confirmed employed" value={totals.employed} />
+    </div>
 
-      <Panel title="Published industry standards" className="mt-6">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="border-b border-line text-left text-ink-soft"><th className="pb-2 font-medium">Role</th><th className="pb-2 font-medium">Sector</th><th className="pb-2 font-medium">Version</th><th className="pb-2 font-medium">Curriculum mapped</th><th className="pb-2 font-medium">Review</th><th className="pb-2 font-medium">Status</th></tr></thead>
-            <tbody>{standards.map((s) => <tr key={s.role} className="border-b border-[#EDF1F6]"><td className="py-3 font-semibold">{s.role}</td><td className="py-3">{s.sector}</td><td className="py-3">v{s.version}</td><td className="py-3">{s.mapped}</td><td className="py-3">{s.review}</td><td className="py-3"><Pill tone={s.status === 'Current' ? 'ok' : 'wait'}>{s.status}</Pill></td></tr>)}</tbody>
-          </table>
+    {view === 'Overview' && <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+      <Panel title="Sector activity">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
+          <thead><tr className="border-b border-line text-left text-ink-soft"><th className="pb-2">Sector</th><th className="pb-2">Employers</th><th className="pb-2">Institutions</th><th className="pb-2">Standards</th><th className="pb-2">Projects</th><th className="pb-2">Internships</th></tr></thead>
+          <tbody>{data.map(s => <tr key={s.sector_id} className="border-b border-[#EDF1F6]"><td className="py-3 font-semibold">{s.sector_name}</td><td>{s.employers}</td><td>{s.institutions}</td><td>{s.standards}</td><td>{s.open_projects}</td><td>{s.open_internships}</td></tr>)}</tbody>
+        </table></div>
+      </Panel>
+      <Panel title="The operating loop">
+        <div className="space-y-3 text-sm">
+          {['Industry defines demand and standards','Universities map programmes to competencies','Students build evidence through projects, assessment and internships','Employers discover, assess and hire','Outcomes and feedback become curriculum improvement actions'].map((x,i) => <div key={x} className="flex gap-3"><span className="font-display font-bold text-ink-soft">0{i+1}</span><span>{x}</span></div>)}
         </div>
       </Panel>
+    </div>}
 
-      <Panel title="Curriculum actions">
-        <div className="space-y-2">{actions.map(([skill, programme, source, status]) => <div key={skill} className="grid gap-2 rounded border border-line p-3 sm:grid-cols-[1.2fr_1fr_1fr_auto] sm:items-center"><strong>{skill}</strong><span className="text-sm text-ink-soft">{programme}</span><span className="text-sm text-ink-soft">{source}</span><Pill tone={status === 'In progress' ? 'rev' : 'wait'}>{status}</Pill></div>)}</div>
-      </Panel>
-    </>
-  );
+    {view === 'Standards' && <Panel title="Published standards" className="mt-6">
+      {standards.loading ? <Loading /> : <div className="overflow-x-auto"><table className="w-full text-sm">
+        <thead><tr className="border-b border-line text-left text-ink-soft"><th className="pb-2">Sector</th><th className="pb-2">Role</th><th className="pb-2">Version</th><th className="pb-2">Review</th><th className="pb-2">Institutions adopting</th></tr></thead>
+        <tbody>{standardData.map(s => <tr key={s.sector_id + s.role_title} className="border-b border-[#EDF1F6]"><td className="py-3">{s.sector_name}</td><td className="py-3 font-semibold">{s.role_title}</td><td>v{s.version}</td><td>{fmtDate(s.review_by)}</td><td><Pill tone={Number(s.mapped_institutions) ? 'ok' : 'plain'}>{s.mapped_institutions}</Pill></td></tr>)}</tbody>
+      </table></div>}
+    </Panel>}
+
+    {view === 'Alignment' && <Panel title="Network alignment" className="mt-6">
+      <p className="mb-5 text-sm text-ink-soft">This view is intentionally aggregate. Institution-level users see their detailed curriculum mappings in Skill gap and Programmes; the network sees only privacy-safe sector activity.</p>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{data.map(s => {
+        const activity = Math.min(100, Number(s.standards)*8 + Number(s.open_projects)*2 + Number(s.open_internships)*3);
+        return <div key={s.sector_id} className="rounded border border-line p-4"><div className="mb-2 flex justify-between"><strong>{s.sector_name}</strong><span className="text-sm text-ink-soft">{activity}%</span></div><Meter level={Math.max(1, Math.min(4, Math.ceil(activity/25)))} /><p className="mt-3 text-xs text-ink-soft">Standards {s.standards} · projects {s.open_projects} · internships {s.open_internships}</p></div>
+      })}</div>
+    </Panel>}
+
+    {view === 'Outcomes' && <Panel title="Employment outcomes" className="mt-6">
+      <div className="overflow-x-auto"><table className="w-full text-sm">
+        <thead><tr className="border-b border-line text-left text-ink-soft"><th className="pb-2">Sector</th><th className="pb-2">Graduates</th><th className="pb-2">Confirmed employed</th><th className="pb-2">Observed rate</th></tr></thead>
+        <tbody>{data.map(s => { const rate = Number(s.graduates) ? Math.round(Number(s.employed)/Number(s.graduates)*100) : 0; return <tr key={s.sector_id} className="border-b border-[#EDF1F6]"><td className="py-3 font-semibold">{s.sector_name}</td><td>{s.graduates}</td><td>{s.employed}</td><td><div className="flex items-center gap-2"><Meter level={Math.max(1, Math.min(4, Math.ceil(rate/25)))} /><span>{rate}%</span></div></td></tr> })}</tbody>
+      </table></div>
+    </Panel>}
+  </>;
 }
