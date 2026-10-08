@@ -3,10 +3,10 @@
 -- (current_user = 'authenticated') so RPCs running as the function owner pass through.
 
 -- ================================================================== helpers
-create function public.is_api_role() returns boolean
+create or replace function public.is_api_role() returns boolean
 language sql stable as $$ select current_user in ('authenticated', 'anon') $$;
 
-create function public.is_admin() returns boolean
+create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.app_admins a
@@ -14,18 +14,18 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
-create function public.my_org() returns uuid
+create or replace function public.my_org() returns uuid
 language sql stable security definer set search_path = public as $$
   select org_id from public.profiles where id = auth.uid();
 $$;
 
-create function public.my_role() returns text
+create or replace function public.my_role() returns text
 language sql stable security definer set search_path = public as $$
   select role from public.profiles where id = auth.uid();
 $$;
 
 -- The caller's organisation id, only if the organisation is approved and of the given type.
-create function public.approved_org(p_type text) returns uuid
+create or replace function public.approved_org(p_type text) returns uuid
 language sql stable security definer set search_path = public as $$
   select o.id
   from public.profiles p
@@ -33,7 +33,7 @@ language sql stable security definer set search_path = public as $$
   where p.id = auth.uid() and o.type = p_type and o.status = 'approved';
 $$;
 
-create function public.my_approved_org() returns uuid
+create or replace function public.my_approved_org() returns uuid
 language sql stable security definer set search_path = public as $$
   select o.id
   from public.profiles p
@@ -41,12 +41,12 @@ language sql stable security definer set search_path = public as $$
   where p.id = auth.uid() and o.status = 'approved';
 $$;
 
-create function public.setting(p_key text) returns text
+create or replace function public.setting(p_key text) returns text
 language sql stable security definer set search_path = public as $$
   select value from public.app_settings where key = p_key;
 $$;
 
-create function public.normalize_contact(p text) returns text
+create or replace function public.normalize_contact(p text) returns text
 language plpgsql stable security definer set search_path = public as $$
 declare d text; cc text := coalesce(public.setting('default_country_code'), '');
 begin
@@ -58,7 +58,7 @@ begin
 end $$;
 
 -- Can this employer organisation legitimately reach this student?
-create function public.employer_can_reach_student(p_org uuid, p_student uuid) returns boolean
+create or replace function public.employer_can_reach_student(p_org uuid, p_student uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select p_org is not null and (
     exists (select 1 from public.profiles s where s.id = p_student and s.role = 'student' and s.discoverable)
@@ -69,22 +69,22 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
-create function public.notify_user(p_user uuid, p_kind text, p_title text, p_body text default '', p_link text default '')
+create or replace function public.notify_user(p_user uuid, p_kind text, p_title text, p_body text default '', p_link text default '')
 returns void language sql security definer set search_path = public as $$
   insert into public.notifications (user_id, kind, title, body, link) values (p_user, p_kind, p_title, p_body, p_link);
 $$;
 
-create function public.notify_org(p_org uuid, p_kind text, p_title text, p_body text default '', p_link text default '')
+create or replace function public.notify_org(p_org uuid, p_kind text, p_title text, p_body text default '', p_link text default '')
 returns void language sql security definer set search_path = public as $$
   insert into public.notifications (user_id, kind, title, body, link)
   select id, p_kind, p_title, p_body, p_link from public.profiles where org_id = p_org;
 $$;
 
-create function public.touch_updated_at() returns trigger language plpgsql as $$
+create or replace function public.touch_updated_at() returns trigger language plpgsql as $$
 begin new.updated_at := now(); return new; end $$;
 
 -- ================================================================== signup
-create function public.handle_new_user() returns trigger
+create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public, extensions as $$
 declare
   meta jsonb := coalesce(new.raw_user_meta_data, '{}');
@@ -117,7 +117,7 @@ create trigger on_auth_user_created after insert on auth.users
 for each row execute function public.handle_new_user();
 
 -- ===================================================================== guards
-create function public.profiles_guard() returns trigger language plpgsql as $$
+create or replace function public.profiles_guard() returns trigger language plpgsql as $$
 begin
   if public.is_api_role() and not public.is_admin() then
     if new.id <> old.id or new.role <> old.role or new.org_id is distinct from old.org_id
@@ -130,7 +130,7 @@ end $$;
 drop trigger if exists profiles_guard on public.profiles;
 create trigger profiles_guard before update on public.profiles for each row execute function public.profiles_guard();
 
-create function public.organizations_guard() returns trigger language plpgsql as $$
+create or replace function public.organizations_guard() returns trigger language plpgsql as $$
 begin
   if public.is_api_role() and not public.is_admin() then
     if new.type <> old.type or new.status <> old.status or new.created_at <> old.created_at then
@@ -143,7 +143,7 @@ drop trigger if exists organizations_guard on public.organizations;
 create trigger organizations_guard before update on public.organizations for each row execute function public.organizations_guard();
 
 -- Evidence: students edit their own work; only the review process may set verification fields.
-create function public.evidence_before_insert() returns trigger
+create or replace function public.evidence_before_insert() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare pr record; ia record;
 begin
@@ -171,7 +171,7 @@ end $$;
 drop trigger if exists evidence_before_insert on public.evidence;
 create trigger evidence_before_insert before insert on public.evidence for each row execute function public.evidence_before_insert();
 
-create function public.evidence_guard() returns trigger language plpgsql as $$
+create or replace function public.evidence_guard() returns trigger language plpgsql as $$
 begin
   new.updated_at := now();
   if not public.is_api_role() then return new; end if;
@@ -201,7 +201,7 @@ end $$;
 drop trigger if exists evidence_guard on public.evidence;
 create trigger evidence_guard before update on public.evidence for each row execute function public.evidence_guard();
 
-create function public.enrollments_before_insert() returns trigger
+create or replace function public.enrollments_before_insert() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   select full_name into new.student_name from public.profiles where id = new.student_id;
@@ -210,7 +210,7 @@ end $$;
 drop trigger if exists enrollments_before_insert on public.enrollments;
 create trigger enrollments_before_insert before insert on public.enrollments for each row execute function public.enrollments_before_insert();
 
-create function public.enrollments_guard() returns trigger language plpgsql as $$
+create or replace function public.enrollments_guard() returns trigger language plpgsql as $$
 begin
   if not public.is_api_role() then return new; end if;
   if new.student_id <> old.student_id or new.student_name is distinct from old.student_name
@@ -235,7 +235,7 @@ end $$;
 drop trigger if exists enrollments_guard on public.enrollments;
 create trigger enrollments_guard before update on public.enrollments for each row execute function public.enrollments_guard();
 
-create function public.applications_before_insert() returns trigger
+create or replace function public.applications_before_insert() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare i record;
 begin
@@ -249,7 +249,7 @@ end $$;
 drop trigger if exists applications_before_insert on public.internship_applications;
 create trigger applications_before_insert before insert on public.internship_applications for each row execute function public.applications_before_insert();
 
-create function public.applications_guard() returns trigger language plpgsql as $$
+create or replace function public.applications_guard() returns trigger language plpgsql as $$
 begin
   new.updated_at := now();
   if not public.is_api_role() then return new; end if;
@@ -275,7 +275,7 @@ end $$;
 drop trigger if exists applications_guard on public.internship_applications;
 create trigger applications_guard before update on public.internship_applications for each row execute function public.applications_guard();
 
-create function public.pipeline_before_insert() returns trigger
+create or replace function public.pipeline_before_insert() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   select full_name into new.student_name from public.profiles where id = new.student_id;
@@ -284,7 +284,7 @@ end $$;
 drop trigger if exists pipeline_before_insert on public.talent_pipeline;
 create trigger pipeline_before_insert before insert on public.talent_pipeline for each row execute function public.pipeline_before_insert();
 
-create function public.pipeline_guard() returns trigger language plpgsql as $$
+create or replace function public.pipeline_guard() returns trigger language plpgsql as $$
 begin
   new.updated_at := now();
   if not public.is_api_role() then return new; end if;
@@ -303,7 +303,7 @@ end $$;
 drop trigger if exists pipeline_guard on public.talent_pipeline;
 create trigger pipeline_guard before update on public.talent_pipeline for each row execute function public.pipeline_guard();
 
-create function public.employments_before_insert() returns trigger
+create or replace function public.employments_before_insert() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   select full_name into new.student_name from public.profiles where id = new.student_id;
@@ -312,7 +312,7 @@ end $$;
 drop trigger if exists employments_before_insert on public.employments;
 create trigger employments_before_insert before insert on public.employments for each row execute function public.employments_before_insert();
 
-create function public.employments_guard() returns trigger language plpgsql as $$
+create or replace function public.employments_guard() returns trigger language plpgsql as $$
 begin
   if public.is_api_role() and (new.student_id <> old.student_id or new.student_name is distinct from old.student_name or new.employer_org_id is distinct from old.employer_org_id
       or new.source <> old.source or new.employer_confirmed <> old.employer_confirmed or new.created_at <> old.created_at) then
@@ -323,7 +323,7 @@ end $$;
 drop trigger if exists employments_guard on public.employments;
 create trigger employments_guard before update on public.employments for each row execute function public.employments_guard();
 
-create function public.assessment_results_guard() returns trigger language plpgsql as $$
+create or replace function public.assessment_results_guard() returns trigger language plpgsql as $$
 begin
   if public.is_api_role() and (to_jsonb(new) - 'is_public') is distinct from (to_jsonb(old) - 'is_public') then
     raise exception 'Students can only show or hide an assessment result' using errcode = '42501';
@@ -333,7 +333,7 @@ end $$;
 drop trigger if exists assessment_results_guard on public.assessment_results;
 create trigger assessment_results_guard before update on public.assessment_results for each row execute function public.assessment_results_guard();
 
-create function public.notifications_guard() returns trigger language plpgsql as $$
+create or replace function public.notifications_guard() returns trigger language plpgsql as $$
 begin
   if public.is_api_role() and (to_jsonb(new) - 'read_at') is distinct from (to_jsonb(old) - 'read_at') then
     raise exception 'Notifications can only be marked as read' using errcode = '42501';
@@ -351,7 +351,7 @@ drop trigger if exists curriculum_actions_touch on public.curriculum_actions;
 create trigger curriculum_actions_touch before update on public.curriculum_actions for each row execute function public.touch_updated_at();
 
 -- ======================================================== notification triggers
-create function public.evidence_events_and_notify() returns trigger
+create or replace function public.evidence_events_and_notify() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'INSERT' or new.status is distinct from old.status then
@@ -372,7 +372,7 @@ drop trigger if exists evidence_events_and_notify on public.evidence;
 create trigger evidence_events_and_notify after insert or update on public.evidence
 for each row execute function public.evidence_events_and_notify();
 
-create function public.application_notify() returns trigger
+create or replace function public.application_notify() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare i record;
 begin
@@ -392,7 +392,7 @@ drop trigger if exists application_notify on public.internship_applications;
 create trigger application_notify after insert or update on public.internship_applications
 for each row execute function public.application_notify();
 
-create function public.pipeline_notify() returns trigger
+create or replace function public.pipeline_notify() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare org_name text;
 begin
@@ -406,7 +406,7 @@ drop trigger if exists pipeline_notify on public.talent_pipeline;
 create trigger pipeline_notify after update on public.talent_pipeline
 for each row execute function public.pipeline_notify();
 
-create function public.assessment_result_notify() returns trigger
+create or replace function public.assessment_result_notify() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   perform public.notify_user(new.student_id, 'assessment_result', 'New assessment result', new.owner_org_name, '/assessments');
@@ -416,7 +416,7 @@ drop trigger if exists assessment_result_notify on public.assessment_results;
 create trigger assessment_result_notify after insert on public.assessment_results
 for each row execute function public.assessment_result_notify();
 
-create function public.feedback_notify() returns trigger
+create or replace function public.feedback_notify() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   perform public.notify_user(new.student_id, 'feedback_received', 'You received employer feedback', '', '/journey');
@@ -426,7 +426,7 @@ drop trigger if exists feedback_notify on public.employer_feedback;
 create trigger feedback_notify after insert on public.employer_feedback
 for each row execute function public.feedback_notify();
 
-create function public.enrollment_notify() returns trigger
+create or replace function public.enrollment_notify() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'INSERT' then
@@ -440,7 +440,7 @@ drop trigger if exists enrollment_notify on public.enrollments;
 create trigger enrollment_notify after insert or update on public.enrollments
 for each row execute function public.enrollment_notify();
 
-create function public.standard_response_notify() returns trigger
+create or replace function public.standard_response_notify() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare s record; inst text;
 begin
@@ -453,7 +453,7 @@ drop trigger if exists standard_response_notify on public.standard_responses;
 create trigger standard_response_notify after insert or update on public.standard_responses
 for each row execute function public.standard_response_notify();
 
-create function public.organization_status_notify() returns trigger
+create or replace function public.organization_status_notify() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   if new.status is distinct from old.status then
