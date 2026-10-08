@@ -38,8 +38,12 @@ export function EmployerStandards() {
     const picked = Object.entries(f.rows).filter(([, v]) => v.on);
     if (!f.role.trim()) throw new Error('Enter the role this standard describes.');
     if (!picked.length) throw new Error('Tick at least one competency.');
-    const [s] = unwrap(await supabase.from('standards').insert({ employer_org_id: profile.org_id, sector_id: f.sector, role_title: f.role.trim(), review_by: f.reviewBy }).select('id'));
-    unwrap(await supabase.from('standard_competencies').insert(picked.map(([id, v]) => ({ standard_id: s.id, competency_id: id, importance: v.importance, level: v.level }))));
+    unwrap(await supabase.rpc('publish_standard', {
+      p_sector_id: f.sector,
+      p_role_title: f.role.trim(),
+      p_review_by: f.reviewBy,
+      p_competencies: picked.map(([competency_id, v]) => ({ competency_id, importance: v.importance, level: v.level })),
+    }));
     setF({ ...f, role: '', rows: {}, jobPost: '' });
     list.reload();
   }, 'Standard published.');
@@ -128,8 +132,14 @@ export function EmployerProjects() {
   const publish = () => run(async () => {
     if (!f.title.trim() || !f.description.trim()) throw new Error('Add a title and a description.');
     if (!f.comps.length) throw new Error('Pick at least one competency.');
-    const [p] = unwrap(await supabase.from('projects').insert({ employer_org_id: profile.org_id, sector_id: f.sector, title: f.title.trim(), description: f.description.trim(), kind: f.kind, hours_estimate: f.hours ? Number(f.hours) : null }).select('id'));
-    unwrap(await supabase.from('project_competencies').insert(f.comps.map((c) => ({ project_id: p.id, competency_id: c }))));
+    unwrap(await supabase.rpc('publish_project', {
+      p_sector_id: f.sector,
+      p_title: f.title.trim(),
+      p_description: f.description.trim(),
+      p_kind: f.kind,
+      p_hours_estimate: f.hours ? Number(f.hours) : null,
+      p_competencies: f.comps.map((competency_id) => ({ competency_id })),
+    }));
     setF({ ...blank, sector: f.sector });
     list.reload();
   }, 'Project published.');
@@ -177,12 +187,18 @@ export function EmployerInternships() {
   const publish = () => run(async () => {
     if (!f.title.trim() || !f.description.trim()) throw new Error('Add a title and a description.');
     if (!f.comps.length) throw new Error('Pick at least one competency.');
-    const [i] = unwrap(await supabase.from('internships').insert({
-      employer_org_id: profile.org_id, sector_id: f.sector, title: f.title.trim(), description: f.description.trim(), location: f.location.trim(),
-      starts_on: f.starts || null, duration_weeks: f.weeks ? Number(f.weeks) : null, slots: Number(f.slots) || 1, stipend_note: f.stipend.trim(), application_deadline: f.deadline || null,
-    }).select('id'));
-    unwrap(await supabase.from('internship_competencies').insert(f.comps.map((c) => ({ internship_id: i.id, competency_id: c }))));
-    setF({ ...blank, sector: f.sector });
+    unwrap(await supabase.rpc('publish_internship', {
+      p_sector_id: f.sector,
+      p_title: f.title.trim(),
+      p_description: f.description.trim(),
+      p_location: f.location.trim(),
+      p_starts_on: f.starts || null,
+      p_duration_weeks: f.weeks ? Number(f.weeks) : null,
+      p_slots: Number(f.slots) || 1,
+      p_stipend_note: f.stipend.trim(),
+      p_application_deadline: f.deadline || null,
+      p_competencies: f.comps.map((competency_id) => ({ competency_id })),
+    }));    setF({ ...blank, sector: f.sector });
     list.reload();
   }, 'Internship published.');
   const setInternship = (i, status) => run(async () => { unwrap(await supabase.from('internships').update({ status }).eq('id', i.id)); list.reload(); });
