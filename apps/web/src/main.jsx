@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { HashRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AuthProvider } from './auth.jsx';
 import { CatalogProvider } from './catalog.jsx';
@@ -20,9 +20,9 @@ function Setup() {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     {configured ? (
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <HashRouter>
         <ToastProvider><AuthProvider><CatalogProvider><App /></CatalogProvider></AuthProvider></ToastProvider>
-      </BrowserRouter>
+      </HashRouter>
     ) : <Setup />}
   </React.StrictMode>,
 );
