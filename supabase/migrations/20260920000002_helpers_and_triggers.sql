@@ -112,6 +112,7 @@ begin
   return new;
 end $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
 for each row execute function public.handle_new_user();
 
@@ -126,6 +127,7 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists profiles_guard on public.profiles;
 create trigger profiles_guard before update on public.profiles for each row execute function public.profiles_guard();
 
 create function public.organizations_guard() returns trigger language plpgsql as $$
@@ -137,6 +139,7 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists organizations_guard on public.organizations;
 create trigger organizations_guard before update on public.organizations for each row execute function public.organizations_guard();
 
 -- Evidence: students edit their own work; only the review process may set verification fields.
@@ -165,6 +168,7 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists evidence_before_insert on public.evidence;
 create trigger evidence_before_insert before insert on public.evidence for each row execute function public.evidence_before_insert();
 
 create function public.evidence_guard() returns trigger language plpgsql as $$
@@ -194,6 +198,7 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists evidence_guard on public.evidence;
 create trigger evidence_guard before update on public.evidence for each row execute function public.evidence_guard();
 
 create function public.enrollments_before_insert() returns trigger
@@ -202,6 +207,7 @@ begin
   select full_name into new.student_name from public.profiles where id = new.student_id;
   return new;
 end $$;
+drop trigger if exists enrollments_before_insert on public.enrollments;
 create trigger enrollments_before_insert before insert on public.enrollments for each row execute function public.enrollments_before_insert();
 
 create function public.enrollments_guard() returns trigger language plpgsql as $$
@@ -226,6 +232,7 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists enrollments_guard on public.enrollments;
 create trigger enrollments_guard before update on public.enrollments for each row execute function public.enrollments_guard();
 
 create function public.applications_before_insert() returns trigger
@@ -239,6 +246,7 @@ begin
   select full_name into new.student_name from public.profiles where id = new.student_id;
   return new;
 end $$;
+drop trigger if exists applications_before_insert on public.internship_applications;
 create trigger applications_before_insert before insert on public.internship_applications for each row execute function public.applications_before_insert();
 
 create function public.applications_guard() returns trigger language plpgsql as $$
@@ -264,6 +272,7 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists applications_guard on public.internship_applications;
 create trigger applications_guard before update on public.internship_applications for each row execute function public.applications_guard();
 
 create function public.pipeline_before_insert() returns trigger
@@ -272,6 +281,7 @@ begin
   select full_name into new.student_name from public.profiles where id = new.student_id;
   return new;
 end $$;
+drop trigger if exists pipeline_before_insert on public.talent_pipeline;
 create trigger pipeline_before_insert before insert on public.talent_pipeline for each row execute function public.pipeline_before_insert();
 
 create function public.pipeline_guard() returns trigger language plpgsql as $$
@@ -290,6 +300,7 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists pipeline_guard on public.talent_pipeline;
 create trigger pipeline_guard before update on public.talent_pipeline for each row execute function public.pipeline_guard();
 
 create function public.employments_before_insert() returns trigger
@@ -298,6 +309,7 @@ begin
   select full_name into new.student_name from public.profiles where id = new.student_id;
   return new;
 end $$;
+drop trigger if exists employments_before_insert on public.employments;
 create trigger employments_before_insert before insert on public.employments for each row execute function public.employments_before_insert();
 
 create function public.employments_guard() returns trigger language plpgsql as $$
@@ -308,6 +320,7 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists employments_guard on public.employments;
 create trigger employments_guard before update on public.employments for each row execute function public.employments_guard();
 
 create function public.assessment_results_guard() returns trigger language plpgsql as $$
@@ -317,6 +330,7 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists assessment_results_guard on public.assessment_results;
 create trigger assessment_results_guard before update on public.assessment_results for each row execute function public.assessment_results_guard();
 
 create function public.notifications_guard() returns trigger language plpgsql as $$
@@ -326,10 +340,14 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists notifications_guard on public.notifications;
 create trigger notifications_guard before update on public.notifications for each row execute function public.notifications_guard();
 
+drop trigger if exists outcomes_touch on public.outcomes;
 create trigger outcomes_touch before update on public.outcomes for each row execute function public.touch_updated_at();
+drop trigger if exists standard_responses_touch on public.standard_responses;
 create trigger standard_responses_touch before update on public.standard_responses for each row execute function public.touch_updated_at();
+drop trigger if exists curriculum_actions_touch on public.curriculum_actions;
 create trigger curriculum_actions_touch before update on public.curriculum_actions for each row execute function public.touch_updated_at();
 
 -- ======================================================== notification triggers
@@ -350,6 +368,7 @@ begin
   end if;
   return null;
 end $$;
+drop trigger if exists evidence_events_and_notify on public.evidence;
 create trigger evidence_events_and_notify after insert or update on public.evidence
 for each row execute function public.evidence_events_and_notify();
 
@@ -369,6 +388,7 @@ begin
   end if;
   return null;
 end $$;
+drop trigger if exists application_notify on public.internship_applications;
 create trigger application_notify after insert or update on public.internship_applications
 for each row execute function public.application_notify();
 
@@ -382,6 +402,7 @@ begin
   end if;
   return null;
 end $$;
+drop trigger if exists pipeline_notify on public.talent_pipeline;
 create trigger pipeline_notify after update on public.talent_pipeline
 for each row execute function public.pipeline_notify();
 
@@ -391,6 +412,7 @@ begin
   perform public.notify_user(new.student_id, 'assessment_result', 'New assessment result', new.owner_org_name, '/assessments');
   return null;
 end $$;
+drop trigger if exists assessment_result_notify on public.assessment_results;
 create trigger assessment_result_notify after insert on public.assessment_results
 for each row execute function public.assessment_result_notify();
 
@@ -400,6 +422,7 @@ begin
   perform public.notify_user(new.student_id, 'feedback_received', 'You received employer feedback', '', '/journey');
   return null;
 end $$;
+drop trigger if exists feedback_notify on public.employer_feedback;
 create trigger feedback_notify after insert on public.employer_feedback
 for each row execute function public.feedback_notify();
 
@@ -413,6 +436,7 @@ begin
   end if;
   return null;
 end $$;
+drop trigger if exists enrollment_notify on public.enrollments;
 create trigger enrollment_notify after insert or update on public.enrollments
 for each row execute function public.enrollment_notify();
 
@@ -425,6 +449,7 @@ begin
   perform public.notify_org(s.employer_org_id, 'standard_response', inst || ' responded to "' || s.role_title || '"', new.status, '/standards');
   return null;
 end $$;
+drop trigger if exists standard_response_notify on public.standard_responses;
 create trigger standard_response_notify after insert or update on public.standard_responses
 for each row execute function public.standard_response_notify();
 
@@ -436,5 +461,6 @@ begin
   end if;
   return null;
 end $$;
+drop trigger if exists organization_status_notify on public.organizations;
 create trigger organization_status_notify after update on public.organizations
 for each row execute function public.organization_status_notify();
