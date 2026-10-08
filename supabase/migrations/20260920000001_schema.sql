@@ -292,7 +292,7 @@ create table if not exists public.evidence_competencies (
 
 -- an assessment result can point at the evidence it judged
 alter table public.assessment_results
-  add column evidence_id uuid references public.evidence (id) on delete set null;
+  add column if not exists evidence_id uuid references public.evidence (id) on delete set null;
 
 create table if not exists public.evidence_media (
   id uuid primary key default gen_random_uuid(),
