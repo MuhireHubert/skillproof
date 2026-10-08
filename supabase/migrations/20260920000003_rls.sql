@@ -144,7 +144,7 @@ create policy assessment_competencies_write on public.assessment_competencies fo
 
 -- Results are written through record_assessment_result(). Students may only publish or hide them.
 -- Helper so anonymous readers of public results never need access to the assessments table itself.
-create function public.owns_assessment(p_assessment uuid) returns boolean
+create or replace function public.owns_assessment(p_assessment uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.assessments a where a.id = p_assessment and a.owner_org_id = public.my_approved_org());
 $$;
@@ -314,5 +314,5 @@ create policy notifications_update on public.notifications for update to authent
 
 -- ------------------------------------------- public portfolio (opt-in, safe columns only)
 -- Deliberately owned by the table owner so it bypasses RLS; it exposes only opted-in rows and no email.
-create view public.public_profiles as
+create or replace view public.public_profiles as
   select id, slug, full_name, headline, sector_ids from public.profiles where public_profile;
