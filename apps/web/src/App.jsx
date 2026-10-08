@@ -11,6 +11,7 @@ import { InstitutionStandards, Demand, Gap, Programmes, Enrolments, Outcomes, Ac
 import { Requirements, Compliance } from './pages/regulator.jsx';
 import Admin from './pages/Admin.jsx';
 import AssessmentsManager from './pages/assessments.jsx';
+import Network from './pages/network.jsx';
 
 function Protected() {
   const { session, profile, loading, signOut } = useAuth();
@@ -61,6 +62,7 @@ export default function App() {
         <Route path="actions" element={<ByRole institution={<Actions />} />} />
         <Route path="requirements" element={<ByRole regulator={<Requirements />} />} />
         <Route path="compliance" element={<ByRole regulator={<Compliance />} />} />
+        <Route path="network" element={<ByRole student={<Network />} employer={<Network />} institution={<Network />} regulator={<Network />} />} />
         <Route path="admin" element={<Admin />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
