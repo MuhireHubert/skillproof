@@ -2,14 +2,50 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, initial-scale=1, viewport-fit=cover" />
     <title>SkillProof: verified proof of work</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      #boot-status {
+        max-width: 760px;
+        margin: 48px auto;
+        padding: 24px;
+        font: 15px/1.5 system-ui, sans-serif;
+        color: #17202a;
+      }
+      #boot-status strong { display:block; font-size:24px; margin-bottom:8px; }
+      #boot-status small { color:#5d6872; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot-status">
+        <strong>Loading SkillProof…</strong>
+        <small>If this message remains visible, the frontend JavaScript did not start. Open the browser console and check the deployment assets.</small>
+      </div>
+    </div>
+    <script>
+      window.addEventListener('error', function (event) {
+        if (!event.error) return;
+        var root = document.getElementById('root');
+        if (!root) return;
+        root.innerHTML =
+          '<div id="boot-status"><strong>SkillProof failed to load</strong>' +
+          '<p>' + String(event.error.message || event.message || 'Unknown JavaScript error') + '</p>' +
+          '<small>Open the browser console for the full stack trace. This screen replaces the blank page normally seen after a frontend startup failure.</small></div>';
+      });
+      window.addEventListener('unhandledrejection', function (event) {
+        var root = document.getElementById('root');
+        if (!root) return;
+        var reason = event.reason && event.reason.message ? event.reason.message : String(event.reason || 'Unknown promise rejection');
+        root.innerHTML =
+          '<div id="boot-status"><strong>SkillProof startup error</strong>' +
+          '<p>' + reason + '</p>' +
+          '<small>Open the browser console for the full stack trace.</small></div>';
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
