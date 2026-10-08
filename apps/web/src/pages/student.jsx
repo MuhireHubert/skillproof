@@ -26,9 +26,8 @@ export function StudentProjects() {
   }, []);
 
   const start = (p) => run(async () => {
-    const [e] = unwrap(await supabase.from('evidence').insert({ student_id: profile.id, project_id: p.id, sector_id: p.sector_id, title: p.title }).select('id'));
-    if (p.project_competencies.length) unwrap(await supabase.from('evidence_competencies').insert(p.project_competencies.map((c) => ({ evidence_id: e.id, competency_id: c.competency_id }))));
-    nav('/evidence/' + e.id);
+    const evidenceId = unwrap(await supabase.rpc('start_project_evidence', { p_project: p.id }));
+    nav('/evidence/' + evidenceId);
   });
 
   return (
@@ -68,7 +67,7 @@ export function StudentInternships() {
   }, []);
 
   const apply = (i) => run(async () => {
-    unwrap(await supabase.from('internship_applications').insert({ internship_id: i.id, student_id: profile.id, cover_note: (notes[i.id] || '').trim() }));
+    unwrap(await supabase.rpc('apply_to_internship', { p_internship: i.id, p_cover_note: (notes[i.id] || '').trim() }));
     state.reload();
   }, 'Application sent.');
   const setStatus = (a, status) => run(async () => { unwrap(await supabase.from('internship_applications').update({ status }).eq('id', a.id)); state.reload(); }, 'Updated.');
