@@ -20,7 +20,7 @@ function Setup() {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     {configured ? (
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <ToastProvider><AuthProvider><CatalogProvider><App /></CatalogProvider></AuthProvider></ToastProvider>
       </BrowserRouter>
     ) : <Setup />}
