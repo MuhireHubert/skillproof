@@ -74,3 +74,27 @@ Only the data in `sectors` and `competencies` changes by sector. Eight sectors s
 - Rate limits are in-memory per API instance; use a shared store if you run several.
 - No data-export or account-deletion self-service yet, and the interface is English only.
 - USSD menus are English; add Kinyarwanda and French strings in `apps/api/src/routes/ussd.js`.
+
+## Version 4 network layer
+
+Version 4 keeps V1–V3 on the same domain model and adds the network layer rather than creating a second product.
+
+- **Industry Network:** live privacy-safe sector aggregates across standards, employers, institutions, projects, internships and outcomes.
+- **Standards Registry:** published role standards with versions, review dates and institution adoption.
+- **Alignment:** sector-level view of standards and activity; institution users retain detailed curriculum/skills-gap views.
+- **Outcomes:** aggregate graduate and confirmed employment activity by sector.
+- **Network privacy:** cross-institution views expose aggregate counts only; student-level evidence remains protected by the existing RLS/consent model.
+- **Institutional loop:** standards → programme mapping → student evidence → internship/hiring → outcomes → feedback → curriculum actions.
+
+The network aggregate functions are in `supabase/migrations/20261008000001_network_aggregates.sql`.
+
+### Product versions
+
+| Version | Product |
+|---|---|
+| V1 | Foundation: identity, organisations, competency framework, curriculum, projects, assessments, evidence, verification |
+| V2 | Employment: standards, internships, talent discovery, assessment, hiring, graduate tracking, employer feedback |
+| V3 | Intelligence: demand, skills gap, outcomes, curriculum actions, reporting and regulatory analytics |
+| V4 | Network: cross-sector standards, privacy-safe network analytics, institutional alignment, sector outcomes and the continuous loop |
+
+The UI deliberately uses a professional university/employer operations style rather than an AI-themed visual language.
