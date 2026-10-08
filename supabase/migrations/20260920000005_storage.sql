@@ -20,9 +20,12 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
+drop policy if exists evidence_media_upload on storage.objects;
 create policy evidence_media_upload on storage.objects for insert to authenticated
   with check (bucket_id = 'evidence-media' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists evidence_media_select on storage.objects;
 create policy evidence_media_select on storage.objects for select to anon, authenticated
   using (bucket_id = 'evidence-media' and ((storage.foldername(name))[1] = auth.uid()::text or public.can_read_media(name)));
+drop policy if exists evidence_media_remove on storage.objects;
 create policy evidence_media_remove on storage.objects for delete to authenticated
   using (bucket_id = 'evidence-media' and (storage.foldername(name))[1] = auth.uid()::text);
