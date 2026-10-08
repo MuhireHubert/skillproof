@@ -7,7 +7,7 @@ values ('evidence-media', 'evidence-media', false, 52428800,
 on conflict (id) do update set
   public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
-create function public.can_read_media(p_path text) returns boolean
+create or replace function public.can_read_media(p_path text) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (
     select 1
