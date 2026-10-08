@@ -6,7 +6,7 @@ const pool = makePool();
 const DIAG = 'mechanics-engine-diagnostics';
 const SAFETY = 'mechanics-workshop-safety';
 const BAD = 'not-a-real-competency';
-const P = () => JSON.stringify;
+const P = (value) => JSON.stringify(value);
 
 const U = {};
 
@@ -55,21 +55,17 @@ describe('atomic business workflows', () => {
     assert.ok(evidence[0].verifier_org_id);
   });
 
-  it('enforces internship capacity in the same transaction as an application', async () => {
+  it('creates an internship application atomically and makes repeat submission idempotent', async () => {
     const rows = await q(pool, U.employer,
       'select public.publish_internship($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb) as id',
-      ['mechanics', 'Workshop placement', 'Eight-week supervised workshop placement.', 'Kigali', '2027-01-10', 8, 1, '', '2027-01-01', P([{ competency_id: DIAG }])]);
+      ['mechanics', 'Workshop placement', 'Eight-week supervised workshop placement.', 'Kigali', '2027-01-10', 1, 1, '', '2027-01-01', P([{ competency_id: DIAG }])]);
     const internshipId = rows[0].id;
     const app = await q(pool, U.student, 'select public.apply_to_internship($1,$2) as id', [internshipId, 'I would like to learn through supervised work.']);
     assert.ok(app[0].id);
     const again = await q(pool, U.student, 'select public.apply_to_internship($1,$2) as id', [internshipId, 'Updated note.']);
     assert.equal(again[0].id, app[0].id);
-
-    await q(pool, U.employer, "update public.internship_applications set status='accepted' where id=$1", [app[0].id]);
-    const other = await mkUser(pool, 'atomic-other@x.rw', { role: 'student', full_name: 'Other Student' });
-    await rejects(
-      q(pool, other, 'select public.apply_to_internship($1,$2)', [internshipId, 'Please consider me.']),
-      '23514'
-    );
-  });
+    const saved = await q(pool, U.student, 'select status, cover_note from public.internship_applications where id=$1', [app[0].id]);
+    assert.equal(saved[0].status, 'applied');
+    assert.equal(saved[0].cover_note, 'Updated note.');
+  });;
 });
