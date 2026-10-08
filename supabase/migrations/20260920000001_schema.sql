@@ -9,8 +9,8 @@ create schema if not exists extensions;
 create extension if not exists pgcrypto with schema extensions;
 
 -- =============================================================== platform
-create table public.app_admins (email text primary key check (email = lower(email)));
-create table public.app_settings (key text primary key, value text not null);
+create table if not exists public.app_admins (email text primary key check (email = lower(email)));
+create table if not exists public.app_settings (key text primary key, value text not null);
 insert into public.app_settings (key, value) values
   ('outcomes_min_group', '5'),                 -- k-anonymity floor for analytics about people
   ('default_country_code', '250'),             -- normalises local phone numbers
@@ -18,7 +18,7 @@ insert into public.app_settings (key, value) values
 on conflict (key) do nothing;
 
 -- ====================================================== competency framework
-create table public.sectors (
+create table if not exists public.sectors (
   id text primary key,
   name text not null,
   archetype text not null check (archetype in ('project', 'regulated', 'handson')),
@@ -27,7 +27,7 @@ create table public.sectors (
   active boolean not null default true
 );
 
-create table public.competencies (
+create table if not exists public.competencies (
   id text primary key,
   sector_id text references public.sectors (id) on delete cascade,  -- null = cross-sector professional competency
   name text not null,
@@ -36,10 +36,10 @@ create table public.competencies (
   level_descriptors jsonb,                                          -- optional: 4 strings, overrides the default rubric
   check ((category = 'professional') = (sector_id is null))
 );
-create index competencies_sector_idx on public.competencies (sector_id);
+create index if not exists competencies_sector_idx on public.competencies (sector_id);
 
 -- =========================================================== people and orgs
-create table public.organizations (
+create table if not exists public.organizations (
   id uuid primary key default gen_random_uuid(),
   type text not null check (type in ('employer', 'institution', 'regulator')),
   name text not null check (length(btrim(name)) > 0),
@@ -48,7 +48,7 @@ create table public.organizations (
   created_at timestamptz not null default now()
 );
 
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   role text not null check (role in ('student', 'employer', 'institution', 'regulator')),
   full_name text not null,
@@ -62,10 +62,10 @@ create table public.profiles (
   created_at timestamptz not null default now(),
   check ((role = 'student') = (org_id is null))
 );
-create index profiles_org_idx on public.profiles (org_id);
+create index if not exists profiles_org_idx on public.profiles (org_id);
 
 -- ========================================== university: curriculum and cohorts
-create table public.programmes (
+create table if not exists public.programmes (
   id uuid primary key default gen_random_uuid(),
   institution_org_id uuid not null references public.organizations (id) on delete cascade,
   name text not null,
@@ -73,9 +73,9 @@ create table public.programmes (
   level text not null default '',
   created_at timestamptz not null default now()
 );
-create index programmes_org_idx on public.programmes (institution_org_id);
+create index if not exists programmes_org_idx on public.programmes (institution_org_id);
 
-create table public.courses (
+create table if not exists public.courses (
   id uuid primary key default gen_random_uuid(),
   programme_id uuid not null references public.programmes (id) on delete cascade,
   code text not null default '',
@@ -83,16 +83,16 @@ create table public.courses (
   description text not null default '',
   created_at timestamptz not null default now()
 );
-create index courses_programme_idx on public.courses (programme_id);
+create index if not exists courses_programme_idx on public.courses (programme_id);
 
-create table public.course_competencies (          -- curriculum <-> competencies
+create table if not exists public.course_competencies (          -- curriculum <-> competencies
   course_id uuid not null references public.courses (id) on delete cascade,
   competency_id text not null references public.competencies (id) on delete cascade,
   coverage_level int not null check (coverage_level between 1 and 4),
   primary key (course_id, competency_id)
 );
 
-create table public.enrollments (
+create table if not exists public.enrollments (
   id uuid primary key default gen_random_uuid(),
   student_id uuid not null references public.profiles (id) on delete cascade,
   student_name text not null default '',
@@ -104,9 +104,9 @@ create table public.enrollments (
   created_at timestamptz not null default now(),
   unique (student_id, institution_org_id, programme_id)
 );
-create index enrollments_org_idx on public.enrollments (institution_org_id, status);
+create index if not exists enrollments_org_idx on public.enrollments (institution_org_id, status);
 
-create table public.curriculum_actions (           -- the "curriculum improvement" end of the loop
+create table if not exists public.curriculum_actions (           -- the "curriculum improvement" end of the loop
   id uuid primary key default gen_random_uuid(),
   institution_org_id uuid not null references public.organizations (id) on delete cascade,
   programme_id uuid references public.programmes (id) on delete set null,
@@ -121,7 +121,7 @@ create table public.curriculum_actions (           -- the "curriculum improvemen
 );
 
 -- ============================================================ industry standards
-create table public.standards (
+create table if not exists public.standards (
   id uuid primary key default gen_random_uuid(),
   employer_org_id uuid not null references public.organizations (id) on delete cascade,
   sector_id text not null references public.sectors (id),
@@ -132,9 +132,9 @@ create table public.standards (
   last_confirmed_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
-create index standards_sector_idx on public.standards (sector_id, status);
+create index if not exists standards_sector_idx on public.standards (sector_id, status);
 
-create table public.standard_competencies (
+create table if not exists public.standard_competencies (
   standard_id uuid not null references public.standards (id) on delete cascade,
   competency_id text not null references public.competencies (id) on delete cascade,
   importance int not null check (importance between 1 and 3),
@@ -142,7 +142,7 @@ create table public.standard_competencies (
   primary key (standard_id, competency_id)
 );
 
-create table public.standard_responses (
+create table if not exists public.standard_responses (
   id uuid primary key default gen_random_uuid(),
   standard_id uuid not null references public.standards (id) on delete cascade,
   institution_org_id uuid not null references public.organizations (id) on delete cascade,
@@ -154,7 +154,7 @@ create table public.standard_responses (
 );
 
 -- ================================================ assessments (course or employer)
-create table public.assessments (
+create table if not exists public.assessments (
   id uuid primary key default gen_random_uuid(),
   owner_org_id uuid not null references public.organizations (id) on delete cascade,
   sector_id text not null references public.sectors (id),
@@ -164,16 +164,16 @@ create table public.assessments (
   kind text not null default 'practical' check (kind in ('exam', 'practical', 'project', 'oral', 'portfolio_review', 'workplace_observation')),
   created_at timestamptz not null default now()
 );
-create index assessments_owner_idx on public.assessments (owner_org_id);
+create index if not exists assessments_owner_idx on public.assessments (owner_org_id);
 
-create table public.assessment_competencies (
+create table if not exists public.assessment_competencies (
   assessment_id uuid not null references public.assessments (id) on delete cascade,
   competency_id text not null references public.competencies (id) on delete cascade,
   target_level int not null default 3 check (target_level between 1 and 4),
   primary key (assessment_id, competency_id)
 );
 
-create table public.assessment_results (
+create table if not exists public.assessment_results (
   id uuid primary key default gen_random_uuid(),
   assessment_id uuid not null references public.assessments (id) on delete cascade,
   assessment_title text not null default '',
@@ -187,9 +187,9 @@ create table public.assessment_results (
   assessed_at timestamptz not null default now(),
   unique (assessment_id, student_id)
 );
-create index assessment_results_student_idx on public.assessment_results (student_id);
+create index if not exists assessment_results_student_idx on public.assessment_results (student_id);
 
-create table public.assessment_result_levels (
+create table if not exists public.assessment_result_levels (
   result_id uuid not null references public.assessment_results (id) on delete cascade,
   competency_id text not null references public.competencies (id) on delete cascade,
   level int not null check (level between 1 and 4),
@@ -197,7 +197,7 @@ create table public.assessment_result_levels (
 );
 
 -- ============================================= employers: projects, internships
-create table public.projects (
+create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   employer_org_id uuid not null references public.organizations (id) on delete cascade,
   sector_id text not null references public.sectors (id),
@@ -208,15 +208,15 @@ create table public.projects (
   status text not null default 'open' check (status in ('open', 'closed')),
   created_at timestamptz not null default now()
 );
-create index projects_idx on public.projects (status, sector_id);
+create index if not exists projects_idx on public.projects (status, sector_id);
 
-create table public.project_competencies (
+create table if not exists public.project_competencies (
   project_id uuid not null references public.projects (id) on delete cascade,
   competency_id text not null references public.competencies (id) on delete cascade,
   primary key (project_id, competency_id)
 );
 
-create table public.internships (
+create table if not exists public.internships (
   id uuid primary key default gen_random_uuid(),
   employer_org_id uuid not null references public.organizations (id) on delete cascade,
   sector_id text not null references public.sectors (id),
@@ -231,15 +231,15 @@ create table public.internships (
   status text not null default 'open' check (status in ('open', 'closed', 'filled')),
   created_at timestamptz not null default now()
 );
-create index internships_idx on public.internships (status, sector_id);
+create index if not exists internships_idx on public.internships (status, sector_id);
 
-create table public.internship_competencies (
+create table if not exists public.internship_competencies (
   internship_id uuid not null references public.internships (id) on delete cascade,
   competency_id text not null references public.competencies (id) on delete cascade,
   primary key (internship_id, competency_id)
 );
 
-create table public.internship_applications (
+create table if not exists public.internship_applications (
   id uuid primary key default gen_random_uuid(),
   internship_id uuid not null references public.internships (id) on delete cascade,
   student_id uuid not null references public.profiles (id) on delete cascade,
@@ -251,10 +251,10 @@ create table public.internship_applications (
   updated_at timestamptz not null default now(),
   unique (internship_id, student_id)
 );
-create index internship_applications_student_idx on public.internship_applications (student_id);
+create index if not exists internship_applications_student_idx on public.internship_applications (student_id);
 
 -- ================================================================== evidence
-create table public.evidence (
+create table if not exists public.evidence (
   id uuid primary key default gen_random_uuid(),
   student_id uuid not null references public.profiles (id) on delete cascade,
   student_name text not null default '',
@@ -279,11 +279,11 @@ create table public.evidence (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-create index evidence_student_idx on public.evidence (student_id, created_at desc);
-create index evidence_org_idx on public.evidence (verifier_org_id, status);
-create index evidence_public_idx on public.evidence (student_id) where is_public and status = 'verified';
+create index if not exists evidence_student_idx on public.evidence (student_id, created_at desc);
+create index if not exists evidence_org_idx on public.evidence (verifier_org_id, status);
+create index if not exists evidence_public_idx on public.evidence (student_id) where is_public and status = 'verified';
 
-create table public.evidence_competencies (
+create table if not exists public.evidence_competencies (
   evidence_id uuid not null references public.evidence (id) on delete cascade,
   competency_id text not null references public.competencies (id) on delete cascade,
   rating int check (rating between 1 and 4),   -- null until verified
@@ -294,7 +294,7 @@ create table public.evidence_competencies (
 alter table public.assessment_results
   add column evidence_id uuid references public.evidence (id) on delete set null;
 
-create table public.evidence_media (
+create table if not exists public.evidence_media (
   id uuid primary key default gen_random_uuid(),
   evidence_id uuid not null references public.evidence (id) on delete cascade,
   storage_path text not null unique,
@@ -302,9 +302,9 @@ create table public.evidence_media (
   caption text not null default '',
   created_at timestamptz not null default now()
 );
-create index evidence_media_idx on public.evidence_media (evidence_id);
+create index if not exists evidence_media_idx on public.evidence_media (evidence_id);
 
-create table public.verification_requests (
+create table if not exists public.verification_requests (
   id uuid primary key default gen_random_uuid(),
   evidence_id uuid not null references public.evidence (id) on delete cascade,
   token text not null unique,
@@ -318,9 +318,9 @@ create table public.verification_requests (
   created_at timestamptz not null default now()
 );
 create unique index verification_active_code_idx on public.verification_requests (short_code) where used_at is null;
-create index verification_evidence_idx on public.verification_requests (evidence_id);
+create index if not exists verification_evidence_idx on public.verification_requests (evidence_id);
 
-create table public.evidence_events (
+create table if not exists public.evidence_events (
   id bigserial primary key,
   evidence_id uuid not null references public.evidence (id) on delete cascade,
   actor uuid,
@@ -330,7 +330,7 @@ create table public.evidence_events (
 );
 
 -- ===================================== talent discovery, hiring, employment
-create table public.talent_pipeline (
+create table if not exists public.talent_pipeline (
   id uuid primary key default gen_random_uuid(),
   employer_org_id uuid not null references public.organizations (id) on delete cascade,
   student_id uuid not null references public.profiles (id) on delete cascade,
@@ -343,7 +343,7 @@ create table public.talent_pipeline (
   unique (employer_org_id, student_id)
 );
 
-create table public.employments (
+create table if not exists public.employments (
   id uuid primary key default gen_random_uuid(),
   student_id uuid not null references public.profiles (id) on delete cascade,
   student_name text not null default '',
@@ -358,9 +358,9 @@ create table public.employments (
   employer_confirmed boolean not null default false,
   created_at timestamptz not null default now()
 );
-create index employments_student_idx on public.employments (student_id);
+create index if not exists employments_student_idx on public.employments (student_id);
 
-create table public.outcomes (                      -- graduate tracking: status + consent
+create table if not exists public.outcomes (                      -- graduate tracking: status + consent
   student_id uuid primary key references public.profiles (id) on delete cascade,
   status text not null check (status in ('studying', 'seeking', 'employed', 'self_employed', 'further_study', 'not_seeking')),
   share_with_institution boolean not null default false,
@@ -368,7 +368,7 @@ create table public.outcomes (                      -- graduate tracking: status
 );
 
 -- ================================================================ feedback
-create table public.employer_feedback (
+create table if not exists public.employer_feedback (
   id uuid primary key default gen_random_uuid(),
   employer_org_id uuid not null references public.organizations (id) on delete cascade,
   student_id uuid not null references public.profiles (id) on delete cascade,
@@ -381,9 +381,9 @@ create table public.employer_feedback (
   created_at timestamptz not null default now(),
   check (employment_id is not null or internship_application_id is not null)
 );
-create index employer_feedback_student_idx on public.employer_feedback (student_id);
+create index if not exists employer_feedback_student_idx on public.employer_feedback (student_id);
 
-create table public.feedback_competencies (
+create table if not exists public.feedback_competencies (
   feedback_id uuid not null references public.employer_feedback (id) on delete cascade,
   competency_id text not null references public.competencies (id) on delete cascade,
   observed_level int not null check (observed_level between 1 and 4),
@@ -392,7 +392,7 @@ create table public.feedback_competencies (
 );
 
 -- ================================================================ regulation
-create table public.requirements (
+create table if not exists public.requirements (
   id uuid primary key default gen_random_uuid(),
   regulator_org_id uuid not null references public.organizations (id) on delete cascade,
   sector_id text not null references public.sectors (id),
@@ -403,14 +403,14 @@ create table public.requirements (
   created_at timestamptz not null default now()
 );
 
-create table public.requirement_competencies (
+create table if not exists public.requirement_competencies (
   requirement_id uuid not null references public.requirements (id) on delete cascade,
   competency_id text not null references public.competencies (id) on delete cascade,
   primary key (requirement_id, competency_id)
 );
 
 -- ================================================ notifications and outbound
-create table public.notifications (
+create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   kind text not null,
@@ -420,9 +420,9 @@ create table public.notifications (
   read_at timestamptz,
   created_at timestamptz not null default now()
 );
-create index notifications_user_idx on public.notifications (user_id, created_at desc);
+create index if not exists notifications_user_idx on public.notifications (user_id, created_at desc);
 
-create table public.outbox (
+create table if not exists public.outbox (
   id bigserial primary key,
   channel text not null check (channel in ('sms', 'email')),
   recipient text not null,
@@ -434,4 +434,4 @@ create table public.outbox (
   created_at timestamptz not null default now(),
   sent_at timestamptz
 );
-create index outbox_pending_idx on public.outbox (id) where status = 'pending';
+create index if not exists outbox_pending_idx on public.outbox (id) where status = 'pending';
