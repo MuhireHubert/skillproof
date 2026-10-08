@@ -3,7 +3,7 @@
 
 -- ==================================================== shared review engine
 -- Internal: applies a review decision to an evidence row. Not callable by API roles.
-create function public._apply_review(
+create or replace function public._apply_review(
   p_evidence uuid, p_status text, p_note text, p_ratings jsonb, p_pro jsonb, p_overall int,
   p_by_name text, p_by_role text, p_org_name text, p_assurance text
 ) returns void language plpgsql security definer set search_path = public as $$
@@ -46,7 +46,7 @@ begin
 end $$;
 
 -- ================================================ employer reviews evidence
-create function public.review_evidence(
+create or replace function public.review_evidence(
   p_evidence uuid, p_status text, p_note text default '', p_ratings jsonb default '{}', p_pro jsonb default '{}'
 ) returns void language plpgsql security definer set search_path = public as $$
 declare org uuid := public.approved_org('employer'); e public.evidence; me public.profiles; org_name text;
@@ -61,7 +61,7 @@ begin
 end $$;
 
 -- ================================= student asks an outside supervisor to verify
-create function public.request_external_verification(p_evidence uuid, p_name text, p_role text default '', p_contact text default '')
+create or replace function public.request_external_verification(p_evidence uuid, p_name text, p_role text default '', p_contact text default '')
 returns table (token text, short_code text, expires_at timestamptz)
 language plpgsql security definer set search_path = public, extensions as $$
 declare e public.evidence; t text; code text; contact text; tries int := 0; exp timestamptz := now() + interval '14 days';
@@ -105,7 +105,7 @@ begin
 end $$;
 
 -- Service role only: completes a verification from a link (token) or USSD (short code + caller phone).
-create function public.complete_external_verification(
+create or replace function public.complete_external_verification(
   p_token text, p_code text, p_phone text, p_name text, p_role text, p_decision text,
   p_ratings jsonb, p_overall int, p_note text, p_method text
 ) returns jsonb language plpgsql security definer set search_path = public as $$
@@ -148,7 +148,7 @@ begin
 end $$;
 
 -- =============================================== internships: complete + hire
-create function public.complete_internship(
+create or replace function public.complete_internship(
   p_application uuid, p_ratings jsonb, p_pro jsonb default '{}', p_note text default '', p_hours numeric default 0
 ) returns uuid language plpgsql security definer set search_path = public as $$
 declare org uuid := public.approved_org('employer'); a record; ev uuid; me public.profiles; org_name text;
@@ -171,7 +171,7 @@ begin
   return ev;
 end $$;
 
-create function public.hire_student(p_student uuid, p_job_title text, p_started_on date default null, p_sector text default null)
+create or replace function public.hire_student(p_student uuid, p_job_title text, p_started_on date default null, p_sector text default null)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare org uuid := public.approved_org('employer'); pl public.talent_pipeline; o public.organizations; emp uuid;
 begin
@@ -192,7 +192,7 @@ begin
 end $$;
 
 -- ============================================================ talent discovery
-create function public.discover_talent(p_sector text, p_competencies text[] default '{}', p_min_level int default 1)
+create or replace function public.discover_talent(p_sector text, p_competencies text[] default '{}', p_min_level int default 1)
 returns table (student_id uuid, full_name text, headline text, slug text, matched int, evidence_count int, best jsonb, in_pipeline boolean)
 language plpgsql stable security definer set search_path = public as $$
 declare org uuid := public.approved_org('employer');
@@ -228,7 +228,7 @@ begin
 end $$;
 
 -- ================================================================ assessments
-create function public.record_assessment_result(p_assessment uuid, p_student uuid, p_levels jsonb, p_note text default '', p_evidence uuid default null)
+create or replace function public.record_assessment_result(p_assessment uuid, p_student uuid, p_levels jsonb, p_note text default '', p_evidence uuid default null)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare org uuid := public.my_approved_org(); a public.assessments; o public.organizations; me public.profiles;
         rid uuid; k text; val jsonb; n int := 0;
@@ -274,7 +274,7 @@ end $$;
 
 -- ================================================================== feedback
 -- p_levels: {"<competency_id>": {"observed": 1-4, "expected": 1-4}}
-create function public.submit_feedback(
+create or replace function public.submit_feedback(
   p_student uuid, p_employment uuid, p_application uuid, p_preparedness text,
   p_would_hire_again boolean, p_comment text default '', p_levels jsonb default '{}'
 ) returns uuid language plpgsql security definer set search_path = public as $$
@@ -300,7 +300,7 @@ begin
 end $$;
 
 -- ================================================ analytics: demand and gaps
-create function public.competency_demand(p_sector text)
+create or replace function public.competency_demand(p_sector text)
 returns table (competency_id text, name text, score int, essential int, standards int, avg_level numeric, employers int, projects int, internships int)
 language sql stable as $$
   with s as (
@@ -325,7 +325,7 @@ language sql stable as $$
   order by 3 desc, c.name;
 $$;
 
-create function public.competency_gap(p_sector text)
+create or replace function public.competency_gap(p_sector text)
 returns table (competency_id text, name text, score int, avg_level numeric, coverage int, courses int, status text)
 language plpgsql stable as $$
 declare org uuid := public.approved_org('institution');
@@ -348,7 +348,7 @@ begin
 end $$;
 
 -- ====================================== analytics about graduates (consented, k-anonymous)
-create function public.outcome_summary(p_programme uuid default null)
+create or replace function public.outcome_summary(p_programme uuid default null)
 returns table (programme_id uuid, programme_name text, graduates int, respondents int, employed int, further_study int,
                seeking int, directly int, partly int, unrelated int, avg_days_to_work numeric, suppressed boolean)
 language plpgsql stable security definer set search_path = public as $$
@@ -392,7 +392,7 @@ begin
   from agg a order by a.pname;
 end $$;
 
-create function public.feedback_summary(p_programme uuid default null)
+create or replace function public.feedback_summary(p_programme uuid default null)
 returns table (competency_id text, name text, responses int, avg_observed numeric, avg_expected numeric, shortfall numeric)
 language plpgsql stable security definer set search_path = public as $$
 declare org uuid := public.approved_org('institution'); k int := coalesce(public.setting('outcomes_min_group')::int, 5);
@@ -414,7 +414,7 @@ begin
   order by 6 desc nulls last, c.name;
 end $$;
 
-create function public.feedback_preparedness(p_programme uuid default null)
+create or replace function public.feedback_preparedness(p_programme uuid default null)
 returns table (responses int, ready int, mostly int, partly int, not_ready int, would_hire_again int, suppressed boolean)
 language plpgsql stable security definer set search_path = public as $$
 declare org uuid := public.approved_org('institution'); k int := coalesce(public.setting('outcomes_min_group')::int, 5);
@@ -443,7 +443,7 @@ begin
 end $$;
 
 -- ================================================================== regulation
-create function public.requirement_status(p_student uuid, p_requirement uuid)
+create or replace function public.requirement_status(p_student uuid, p_requirement uuid)
 returns table (hours numeric, met_competencies int, total_competencies int, met boolean)
 language plpgsql stable security definer set search_path = public as $$
 declare r public.requirements; h numeric; total int; ok int;
@@ -465,7 +465,7 @@ begin
   return query select h, ok, total, (h >= r.min_hours and ok = total);
 end $$;
 
-create function public.my_requirement_progress()
+create or replace function public.my_requirement_progress()
 returns table (requirement_id uuid, title text, sector_id text, regulator text, hours numeric, min_hours numeric,
                met_competencies int, total_competencies int, met boolean)
 language plpgsql stable security definer set search_path = public as $$
@@ -481,7 +481,7 @@ begin
   order by r.title;
 end $$;
 
-create function public.regulator_compliance(p_requirement uuid)
+create or replace function public.regulator_compliance(p_requirement uuid)
 returns table (institution_org_id uuid, institution_name text, students int, meeting int, avg_hours numeric)
 language plpgsql stable security definer set search_path = public as $$
 declare org uuid := public.approved_org('regulator');
@@ -504,7 +504,7 @@ end $$;
 
 -- ================================================ student competency record
 -- Invoker: row-level security decides what the caller may see (own, public, or verified for their org).
-create function public.competency_record(p_student uuid)
+create or replace function public.competency_record(p_student uuid)
 returns table (competency_id text, name text, best_level int, evidence_count int, assessment_count int, last_at timestamptz)
 language sql stable as $$
   with rec as (
@@ -523,7 +523,7 @@ language sql stable as $$
 $$;
 
 -- ================================================================ dashboards
-create function public.dashboard_stats() returns jsonb
+create or replace function public.dashboard_stats() returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare uid uuid := auth.uid(); r text := public.my_role(); org uuid := public.my_org(); res jsonb := '{}';
 begin
