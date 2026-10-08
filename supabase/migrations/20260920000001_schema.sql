@@ -317,7 +317,7 @@ create table if not exists public.verification_requests (
   created_by uuid references public.profiles (id) on delete set null,
   created_at timestamptz not null default now()
 );
-create unique index verification_active_code_idx on public.verification_requests (short_code) where used_at is null;
+create unique index if not exists verification_active_code_idx on public.verification_requests (short_code) where used_at is null;
 create index if not exists verification_evidence_idx on public.verification_requests (evidence_id);
 
 create table if not exists public.evidence_events (
