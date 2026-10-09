@@ -14,6 +14,16 @@ export function Seal({ size = 28, className }) {
   );
 }
 
+export function BrandMark({ size = 30, className }) {
+  return (
+    <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true" className={cx('shrink-0', className)}>
+      <rect x="2" y="2" width="36" height="36" rx="10" fill="#163B35" />
+      <path d="M11 13.5h10.5a4 4 0 0 1 0 8H16a4 4 0 0 0 0 8h13" fill="none" stroke="#F5F3E8" strokeWidth="3.2" strokeLinecap="round" />
+      <path d="m23.5 10.5 4 4-4 4" fill="none" stroke="#D6A85B" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /* --------------------------------------------------------------- controls */
 export function Button({ variant, small, className, ...props }) {
   return (
@@ -138,13 +148,44 @@ export function SectorSelect({ value, onChange, placeholder, ...rest }) {
   const { sectors } = useCatalog();
   return <Select value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} options={sectors.map((s) => ({ v: s.id, n: s.name }))} {...rest} />;
 }
-export function SectorChecks({ value, onChange }) {
-  const { sectors } = useCatalog();
+export function SectorChecks({ value = [], onChange }) {
+  const { sectors, loading } = useCatalog();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const selected = sectors.filter((s) => value.includes(s.id));
+  const filtered = sectors.filter((s) => s.name.toLowerCase().includes(query.trim().toLowerCase()));
   return (
-    <div className="flex flex-wrap gap-2">
-      {sectors.map((s) => (
-        <CheckChip key={s.id} checked={value.includes(s.id)} onChange={(on) => onChange(on ? [...value, s.id] : value.filter((x) => x !== s.id))}>{s.name}</CheckChip>
-      ))}
+    <div className="relative">
+      <button type="button" className="input flex min-h-11 items-center justify-between gap-3 text-left" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <span className={selected.length ? 'text-ink' : 'text-ink-soft'}>
+          {loading ? 'Loading sectors…' : selected.length ? selected.length + ' sector' + (selected.length === 1 ? '' : 's') + ' selected' : 'Choose sectors'}
+        </span>
+        <span aria-hidden="true" className="text-ink-soft">{open ? '−' : '+'}</span>
+      </button>
+      {selected.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {selected.map((s) => <button key={s.id} type="button" className="inline-flex items-center gap-1 rounded-full border border-[#C9D9D3] bg-[#EDF4F0] px-2.5 py-1 text-xs font-medium text-[#163B35]" onClick={() => onChange(value.filter((id) => id !== s.id)} aria-label={'Remove ' + s.name}>{s.name}<span aria-hidden="true">×</span></button>)}
+        </div>
+      )}
+      {open && (
+        <div className="absolute left-0 right-0 z-30 mt-1 rounded-lg border border-line bg-white p-3 shadow-xl">
+          <input className="input mb-2" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search sectors…" aria-label="Search sectors" />
+          <div className="max-h-56 overflow-y-auto pr-1">
+            {filtered.map((s) => (
+              <label key={s.id} className="flex cursor-pointer items-center gap-2 rounded px-2.5 py-2 text-sm hover:bg-[#F3F6F4]">
+                <input type="checkbox" checked={value.includes(s.id)} onChange={(e) => onChange(e.target.checked ? [...value, s.id] : value.filter((id) => id !== s.id))} />
+                <span>{s.name}</span>
+              </label>
+            ))}
+            {!filtered.length && <p className="px-2 py-3 text-sm text-ink-soft">No sectors match that search.</p>}
+          </div>
+          <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
+            <button type="button" className="linkbtn text-xs" onClick={() => onChange([])}>Clear selection</button>
+            <button type="button" className="btn btn-sm" onClick={() => { setOpen(false); setQuery(''); }}>Done</button>
+          </div>
+        </div>
+      )}
+      <p className="mt-1 text-xs text-ink-soft">Choose one or more sectors. You can search the list.</p>
     </div>
   );
 }
