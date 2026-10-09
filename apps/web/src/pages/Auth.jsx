@@ -29,9 +29,9 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (emailCooldown <= 0) return undefined;
-    const timer = window.setInterval(() => setEmailCooldown((value) => Math.max(0, value - 1)), 1000);
-    return () => window.clearInterval(timer);
-  }, [emailCooldown > 0]);
+    const timer = window.setTimeout(() => setEmailCooldown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [emailCooldown]);
 
   if (session && !recovery && mode !== 'recovery') return <Navigate to="/" replace />;
 
@@ -143,8 +143,8 @@ export default function AuthPage() {
             </div>
           </>
         )}
-        <Button type="submit" disabled={busy || (isReset && emailCooldown > 0)} className="w-full py-2.5">
-          {busy ? 'Please wait…' : isRecovery ? 'Update password' : isReset ? (emailCooldown > 0 ? `Try again in ${emailCooldown}s` : 'Send reset link') : isSignup ? 'Create account' : 'Sign in'}
+        <Button type="submit" disabled={busy || ((isReset || isSignup) && emailCooldown > 0)} className="w-full py-2.5">
+          {busy ? 'Please wait…' : isRecovery ? 'Update password' : isReset ? (emailCooldown > 0 ? `Try again in ${emailCooldown}s` : 'Send reset link') : isSignup ? (emailCooldown > 0 ? `Try again in ${emailCooldown}s` : 'Create account') : 'Sign in'}
         </Button>
         {!isRecovery && (
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#E8EDE9] pt-4 text-sm">
