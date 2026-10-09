@@ -63,8 +63,8 @@ jobs:
         run: npm run build --prefix apps/web
         env:
           BASE_PATH: /skillproof/
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL || 'https://rmcrdzyzmrzgzfvkcpxn.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_7qc51MUiXCJaPJmiv3NHfg_bdwtw0Tq' }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Add GitHub Pages SPA fallback
