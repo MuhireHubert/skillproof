@@ -164,7 +164,7 @@ export function SectorChecks({ value = [], onChange }) {
       </button>
       {selected.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {selected.map((s) => <button key={s.id} type="button" className="inline-flex items-center gap-1 rounded-full border border-[#C9D9D3] bg-[#EDF4F0] px-2.5 py-1 text-xs font-medium text-[#163B35]" onClick={() => onChange(value.filter((id) => id !== s.id)} aria-label={'Remove ' + s.name}>{s.name}<span aria-hidden="true">×</span></button>)}
+          {selected.map((s) => <button key={s.id} type="button" className="inline-flex items-center gap-1 rounded-full border border-[#C9D9D3] bg-[#EDF4F0] px-2.5 py-1 text-xs font-medium text-[#163B35]" onClick={() => onChange(value.filter((id) => id !== s.id))} aria-label={'Remove ' + s.name}>{s.name}<span aria-hidden="true">×</span></button>)}
         </div>
       )}
       {open && (
