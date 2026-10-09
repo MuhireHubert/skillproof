@@ -4,7 +4,7 @@ import { useAuth } from './auth.jsx';
 import { supabase } from './lib/supabase.js';
 import { useAsync, unwrap } from './lib/hooks.js';
 import { ROLE_LABEL, cx, fmtDate } from './lib/format.js';
-import { Notice, Seal } from './ui.jsx';
+import { BrandMark, Notice } from './ui.jsx';
 
 export const NAV = {
   student: [['/', 'Dashboard'], ['/projects', 'Projects'], ['/internships', 'Internships'], ['/evidence', 'Evidence'], ['/assessments', 'Assessments'], ['/journey', 'Journey'], ['/profile', 'Profile']],
@@ -62,7 +62,7 @@ export default function Layout() {
     <div className="min-h-screen">
       <header className="bg-ink text-white">
         <div className="mx-auto flex min-h-14 max-w-6xl items-center justify-between gap-4 px-5">
-          <div className="flex items-center gap-2.5 font-display text-xl font-extrabold"><Seal size={26} className="text-[#6FD3AE]" />SkillProof</div>
+          <div className="flex items-center gap-2.5 font-display text-xl font-extrabold"><BrandMark size={30} />SkillProof</div>
           <div className="flex items-center gap-3 text-sm">
             <span className="hidden opacity-85 sm:inline">{profile.full_name}{org ? ', ' + org.name : ''} ({ROLE_LABEL[role]})</span>
             <Bell />
