@@ -69,7 +69,7 @@ describe('public and signed-out screens', () => {
   it('renders the sign-in page when signed out', async () => {
     state.signedOut = true;
     mount('/');
-    await screen.findByText(/Show what you can do/);
+    await screen.findByText(/Good work should speak for itself/);
     expect(screen.getAllByText('Sign in').length).toBeGreaterThan(0);
     expect(errors.mock.calls).toEqual([]);
   });
