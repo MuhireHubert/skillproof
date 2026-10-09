@@ -13,8 +13,9 @@ export default {
         no: { DEFAULT: '#A63D3D', bg: '#F8E5E5' },
       },
       fontFamily: {
-        display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
-        body: ['"Instrument Sans"', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        // Familiar, dependable system fonts rather than fashionable startup fonts.
+        display: ['Georgia', 'Cambria', '"Times New Roman"', 'serif'],
+        body: ['"Avenir Next"', 'Avenir', '"Segoe UI"', '"Helvetica Neue"', 'Arial', 'sans-serif'],
       },
     },
   },
