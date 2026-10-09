@@ -5,9 +5,9 @@
 @layer base {
   html { -webkit-text-size-adjust: 100%; }
   body { @apply bg-paper text-ink font-body antialiased; }
-  h1, h2, h3, h4 { @apply font-display tracking-tight leading-tight; }
-  h1 { @apply text-4xl font-extrabold; }
-  h2 { @apply text-2xl font-extrabold; }
+  h1, h2, h3, h4 { @apply font-display leading-tight; }
+  h1 { @apply text-4xl font-bold; letter-spacing: -0.025em; }
+  h2 { @apply text-2xl font-bold; letter-spacing: -0.015em; }
   h3 { @apply text-lg font-semibold; }
   a { @apply text-rev; }
   :focus-visible { @apply outline outline-[3px] outline-offset-2 outline-rev; }
@@ -29,25 +29,25 @@
   .linkbtn { @apply cursor-pointer border-0 bg-transparent p-0 text-rev underline; }
 }
 
-
 /* SkillProof product identity: forest green, warm ivory and muted brass. */
 @layer base {
   body { background-color: #F5F6F2; }
   ::selection { background: #DCE9E1; color: #163B35; }
   button, input, select, textarea { transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease; }
+  p, li { line-height: 1.6; }
 }
 
 @layer components {
-  .btn { border-radius: .55rem; border-color: #163B35; background: #163B35; box-shadow: 0 1px 1px rgb(15 35 28 / 8%); }
+  .btn { border-radius: .45rem; border-color: #163B35; background: #163B35; box-shadow: 0 1px 1px rgb(15 35 28 / 8%); }
   .btn:hover:not(:disabled) { background: #245448; border-color: #245448; }
   .btn-ghost { border-color: #CFD9D2; background: #fff; color: #243B33; }
   .btn-ghost:hover:not(:disabled) { background: #F0F4F0; }
   .btn-go { border-color: #27634F; background: #27634F; }
-  .input { min-height: 2.65rem; border-radius: .55rem; border-color: #CDD7D0; }
+  .input { min-height: 2.65rem; border-radius: .45rem; border-color: #CDD7D0; }
   .input:focus { border-color: #477B69; box-shadow: 0 0 0 3px rgb(71 123 105 / 13%); outline: none; }
-  .card, .auth-form, .auth-example { border-radius: .8rem; }
-  .auth-intro { border-radius: 1rem; background: #163B35; padding: clamp(1.5rem, 3vw, 2.75rem); box-shadow: 0 12px 30px rgb(22 59 53 / 10%); }
-  .auth-intro h1 { font-size: clamp(2.35rem, 4.5vw, 3.65rem); line-height: 1.04; letter-spacing: -.045em; }
+  .card, .auth-form, .auth-example { border-radius: .65rem; }
+  .auth-intro { border-radius: .8rem; background: #163B35; padding: clamp(1.5rem, 3vw, 2.75rem); box-shadow: 0 12px 30px rgb(22 59 53 / 10%); }
+  .auth-intro h1 { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: clamp(2.35rem, 4.5vw, 3.65rem); line-height: 1.08; letter-spacing: -.025em; font-weight: 700; }
   .auth-example { border: 1px solid rgb(255 255 255 / 25%); background: #F6F5ED; color: #243B33; }
   .auth-form { box-shadow: 0 12px 36px rgb(26 48 38 / 7%); }
   .linkbtn { color: #27634F; text-decoration-thickness: 1px; text-underline-offset: 3px; }
