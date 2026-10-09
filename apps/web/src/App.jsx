@@ -36,6 +36,8 @@ function ByRole(props) {
 }
 
 export default function App() {
+  const { recovery } = useAuth();
+  if (recovery) return <AuthPage />;
   return (
     <Routes>
       <Route path="/p/:slug" element={<PublicProfile />} />
