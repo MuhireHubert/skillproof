@@ -4,7 +4,7 @@
 insert into public.app_admins (email) values ('you@example.com') on conflict do nothing;
 
 -- 2. Public URL of the web app (used in verifier links sent by SMS/email) and the USSD short code.
-update public.app_settings set value = 'https://app.example.com' where key = 'public_app_url';
+update public.app_settings set value = 'https://muhirehubert.github.io/skillproof' where key = 'public_app_url';
 insert into public.app_settings (key, value) values ('ussd_code', '*123#') on conflict (key) do update set value = excluded.value;
 
 -- 3. Optional: change the minimum group size for anonymised graduate analytics (default 5).
