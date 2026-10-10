@@ -55,9 +55,8 @@ function Bell() {
 }
 
 export default function Layout() {
-  const { profile, org, role, isAdmin, signOut } = useAuth();
+  const { profile, org, role, signOut } = useAuth();
   const tabs = [...(NAV[role] || [])];
-  if (isAdmin) tabs.push(['/admin', 'Admin']);
   return (
     <div className="min-h-screen">
       <header className="bg-ink text-white">
