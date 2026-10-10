@@ -27,8 +27,9 @@ values ('replace-with-confirmed-admin-email@example.com')
 on conflict (email) do nothing;
 ```
 
-4. Sign out and sign back in. The Admin section should appear in the main navigation. It provides pending-organisation review and competency-framework management.
-5. Keep the list limited to trusted platform operators. To remove an administrator:
+4. Sign out and sign back in. Administrators are routed to a dedicated `/admin` workspace and do not need a student or organisation profile.
+5. The administrator workspace provides sector and competency lifecycle management, organisation governance, administrator grants/revocations, aggregate reports, audit history and selected operational settings.
+6. Keep the list limited to trusted platform operators. To remove an administrator:
 
 ```sql
 delete from public.app_admins
@@ -51,13 +52,16 @@ For production:
 
 ## 4. Apply the database changes
 
-Run migrations in order, including `20261009000001_production_app_url.sql`, against the intended Supabase project. Verify that `public.app_settings.public_app_url` is `https://muhirehubert.github.io/skillproof`.
+Run migrations in order against the intended Supabase project, including `20261009000001_production_app_url.sql` and `20261010000001_platform_admin_workspace.sql`. The latter adds the competency active flag, admin audit log, secure admin-management/settings/reporting RPCs, and audit triggers. GitHub Pages deployment does not apply database migrations automatically. Verify that `public.app_settings.public_app_url` is `https://muhirehubert.github.io/skillproof`.
 
 ## 5. Production smoke test
 
 - Register a student and confirm that the email returns to the deployed SkillProof site, not localhost.
 - Register an organisation and verify that its sector selector opens, supports search, and keeps multiple selections visible.
 - Trigger password reset, follow the link, set a new password, and sign in with it.
-- Sign in as the seeded platform administrator and approve a test organisation.
+- Sign in as the seeded platform administrator and confirm the dedicated admin workspace opens without a student profile.
+- Add a test sector, verify it appears in registration selectors, deactivate it, and verify it disappears from new selections while historical records remain.
+- Add/edit/retire a test competency and verify active selectors update.
+- Test organisation approval/suspension, admin grant/revocation safeguards, settings validation and audit records.
 - Confirm the organisation status changes from pending to approved, then test an action that requires approval.
 - Test on a narrow mobile viewport as well as desktop.
