@@ -26,7 +26,7 @@ function mount(path) {
 }
 
 let errors;
-beforeEach(() => { errors = vi.spyOn(console, 'error').mockImplementation(() => {}); state.admin = false; state.signedOut = false; });
+beforeEach(() => { errors = vi.spyOn(console, 'error').mockImplementation(() => {}); state.admin = false; state.noProfile = false; state.signedOut = false; });
 afterEach(() => { cleanup(); errors.mockRestore(); });
 
 async function settle() {
@@ -64,6 +64,14 @@ describe('every screen renders with data for its role', () => {
     mount('/admin');
     await screen.findByText(/The operating loop/);
     expect(screen.queryByText('Administrator workspace')).toBeNull();
+  });
+
+  it('allows a platform administrator without a student or organisation profile', async () => {
+    state.role = 'student'; state.admin = true; state.noProfile = true;
+    mount('/admin');
+    await screen.findByText('Administrator workspace');
+    expect(screen.getByRole('button', { name: 'Sectors' })).toBeTruthy();
+    expect(errors.mock.calls).toEqual([]);
   });
 });
 
