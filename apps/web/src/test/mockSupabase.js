@@ -5,7 +5,7 @@ const later = new Date(Date.now() + 864e5 * 30).toISOString().slice(0, 10);
 const DIAG = 'mechanics-engine-diagnostics';
 const SAFETY = 'mechanics-workshop-safety';
 
-export const state = { role: 'student', admin: false };
+export const state = { role: 'student', admin: false, noProfile: false };
 
 const sectors = [{ id: 'mechanics', name: 'Mechanics', archetype: 'handson', verifier_label: 'Workshop supervisor', evidence_types: ['Logged repair job'], active: true },
   { id: 'tech', name: 'Technology', archetype: 'project', verifier_label: 'Lead', evidence_types: [], active: true }];
@@ -53,6 +53,7 @@ function singles() {
 }
 
 export function profile() {
+  if (state.noProfile) return null;
   const r = state.role;
   return { id: 'u1', role: r, full_name: 'Test User', email: 't@x.rw', org_id: r === 'student' ? null : 'org1', sector_ids: ['mechanics'], headline: '', public_profile: false, discoverable: false, slug: 'test-user', organizations: r === 'student' ? null : org(r) };
 }
