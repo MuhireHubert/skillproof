@@ -14,9 +14,11 @@ import AssessmentsManager from './pages/assessments.jsx';
 import Network from './pages/network.jsx';
 
 function Protected() {
-  const { session, profile, loading, signOut } = useAuth();
+  const { session, profile, isAdmin, loading, signOut } = useAuth();
   if (loading) return <div className="p-10"><Loading /></div>;
   if (!session) return <Navigate to="/auth" replace />;
+  // Platform administrators use a dedicated workspace, not a student or organisation portal.
+  if (isAdmin) return <Navigate to="/admin" replace />;
   if (!profile) {
     return (
       <div className="mx-auto max-w-xl p-10">
@@ -27,6 +29,14 @@ function Protected() {
     );
   }
   return <Layout />;
+}
+
+function AdminRoute() {
+  const { session, isAdmin, loading } = useAuth();
+  if (loading) return <div className="p-10"><Loading /></div>;
+  if (!session) return <Navigate to="/auth" replace />;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <Admin />;
 }
 
 // Same URL, different screen per role.
@@ -43,6 +53,7 @@ export default function App() {
       <Route path="/p/:slug" element={<PublicProfile />} />
       <Route path="/v/:token" element={<VerifierSignoff />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/admin/*" element={<AdminRoute />} />
       <Route element={<Protected />}>
         <Route index element={<Dashboard />} />
         <Route path="projects" element={<ByRole student={<StudentProjects />} employer={<EmployerProjects />} />} />
@@ -65,7 +76,6 @@ export default function App() {
         <Route path="requirements" element={<ByRole regulator={<Requirements />} />} />
         <Route path="compliance" element={<ByRole regulator={<Compliance />} />} />
         <Route path="network" element={<ByRole student={<Network />} employer={<Network />} institution={<Network />} regulator={<Network />} />} />
-        <Route path="admin" element={<Admin />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
