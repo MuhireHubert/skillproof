@@ -49,19 +49,21 @@ describe('every screen renders with data for its role', () => {
     }
   }
 
-  it('shows the admin section to administrators', async () => {
+  it('shows a separate admin workspace to platform administrators', async () => {
     state.role = 'institution'; state.admin = true;
     mount('/admin');
-    await screen.findByText('Admin and verification');
+    await screen.findByText('Administrator workspace');
     await settle();
-    expect(screen.getByText('Approve')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sectors' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Users & admins' })).toBeTruthy();
     expect(errors.mock.calls).toEqual([]);
   });
 
-  it('hides the admin section from everyone else', async () => {
+  it('redirects non-admins away from the admin workspace', async () => {
     state.role = 'employer';
     mount('/admin');
-    await screen.findByText(/for platform administrators/);
+    await screen.findByText(/The operating loop/);
+    expect(screen.queryByText('Administrator workspace')).toBeNull();
   });
 });
 
