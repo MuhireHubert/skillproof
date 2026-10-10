@@ -67,6 +67,9 @@ const rpcs = () => ({
   feedback_summary: [{ competency_id: DIAG, name: 'Engine diagnostics', responses: 6, avg_observed: 2, avg_expected: 3, shortfall: 1 }],
   my_requirement_progress: [{ requirement_id: 'rq1', title: 'Practical hours', sector_id: 'mechanics', regulator: 'Board', hours: 60, min_hours: 100, met_competencies: 1, total_competencies: 2, met: false }],
   regulator_compliance: [{ institution_org_id: 'org1', institution_name: 'College', students: 6, meeting: 2, avg_hours: 80 }],
+  admin_list_admins: [{ admin_email: 'admin@example.com' }],
+  admin_get_settings: [{ setting_key: 'outcomes_min_group', setting_value: '5' }, { setting_key: 'default_country_code', setting_value: '250' }, { setting_key: 'public_app_url', setting_value: 'https://muhirehubert.github.io/skillproof' }],
+  admin_report_summary: { users_by_role: { student: 4, employer: 2 }, organisations_by_status: { pending: 1, approved: 2 }, sectors: { total: 2, active: 2 }, competencies: { total: 3, active: 3 }, evidence_by_status: { submitted: 1, verified: 2 }, projects: { total: 2, open: 1 }, internships: { total: 1, open: 1 }, verified_evidence: 2 },
   discover_talent: [{ student_id: 'u1', full_name: 'Ada Uwase', headline: 'Apprentice', slug: 'test', matched: 2, evidence_count: 3, best: { [DIAG]: 4, [SAFETY]: 3 }, in_pipeline: false }],
 });
 
@@ -88,6 +91,8 @@ function builder(table) {
 export const supabase = {
   from: (t) => builder(t),
   rpc: (name) => Promise.resolve({ data: rpcs()[name] ?? [], error: null }),
+  channel: () => { const ch = { on: () => ch, subscribe: () => ch }; return ch; },
+  removeChannel: async () => {},
   auth: {
     getSession: async () => ({ data: { session: state.signedOut ? null : { access_token: 't', user: { id: 'u1' } } } }),
     onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
